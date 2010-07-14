@@ -242,7 +242,7 @@ public class MediaPlaybackService extends Service {
                     break;
                 case FADEOUT:
                     if (isPlaying()) {
-                    	mCurrentVolume -= 0.05f;
+                    	mCurrentVolume -= 0.02f;
                         if (mCurrentVolume > 0f) {
                             mMediaplayerHandler.sendEmptyMessageDelayed(FADEOUT, 10);
                         } else {
