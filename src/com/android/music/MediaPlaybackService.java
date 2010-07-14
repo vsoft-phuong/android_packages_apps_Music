@@ -113,6 +113,7 @@ public class MediaPlaybackService extends Service {
     private static final int RELEASE_WAKELOCK = 2;
     private static final int SERVER_DIED = 3;
     private static final int FADEIN = 4;
+    private static final int FADEOUT = 5;
     private static final int MAX_HISTORY_SIZE = 100;
     
     private MultiPlayer mPlayer;
@@ -186,7 +187,7 @@ public class MediaPlaybackService extends Service {
                 int ringvolume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
                 if (ringvolume > 0) {
                     mResumeAfterCall = (isPlaying() || mResumeAfterCall) && (getAudioId() >= 0);
-                    pause();
+                    fadeOutAndPause();
 		    if(mResumeAfterCall)
 			mPausedInCall=true;
                 }
@@ -213,6 +214,10 @@ public class MediaPlaybackService extends Service {
         mMediaplayerHandler.sendEmptyMessageDelayed(FADEIN, 10);
     }
     
+    private void fadeOutAndPause() {
+        mMediaplayerHandler.sendEmptyMessageDelayed(FADEOUT, 10);
+    }
+    
     private Handler mMediaplayerHandler = new Handler() {
         float mCurrentVolume = 1.0f;
         @Override
@@ -231,6 +236,18 @@ public class MediaPlaybackService extends Service {
                             mMediaplayerHandler.sendEmptyMessageDelayed(FADEIN, 10);
                         } else {
                             mCurrentVolume = 1.0f;
+                        }
+                        mPlayer.setVolume(mCurrentVolume);
+                    }
+                    break;
+                case FADEOUT:
+                    if (isPlaying()) {
+                    	mCurrentVolume -= 0.05f;
+                        if (mCurrentVolume > 0f) {
+                            mMediaplayerHandler.sendEmptyMessageDelayed(FADEOUT, 10);
+                        } else {
+                            mCurrentVolume = 0f;
+                            pause();
                         }
                         mPlayer.setVolume(mCurrentVolume);
                     }
@@ -382,7 +399,7 @@ public class MediaPlaybackService extends Service {
                     Log.v(LOGTAG, "AudioFocus: received AUDIOFOCUS_LOSS_TRANSIENT");
                     if(isPlaying()) {
                         mPausedByTransientLossOfFocus = true;
-                        pause();
+                        fadeOutAndPause();
                     }
                     break;
                 case AudioManager.AUDIOFOCUS_GAIN:
